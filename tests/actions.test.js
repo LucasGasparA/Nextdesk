@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { GROUP_NAME, discoverSetup, loadReference, loadQueue, loadTicket, saveTicket } from '../src/actions.js';
+import { GROUP_NAME, discoverSetup, loadReference, loadQueue, loadTicket, saveTicket, countUnassigned } from '../src/actions.js';
 
 function fakeClient(overrides = {}) {
   const calls = [];
@@ -31,7 +31,7 @@ function fakeClient(overrides = {}) {
     contact: async (id) => {
       calls.push(['contact', id]);
       if (id === 51) throw new Error('404');
-      return { id, name: `Cliente ${id}` };
+      return { id, name: `Cliente ${id}`, email: `c${id}@x.com` };
     },
     ticket: async (id) => ({
       id,
@@ -75,12 +75,13 @@ test('loadReference traz só agentes do grupo, ordenados, e campos e respostas p
   });
 });
 
-test('loadQueue busca os dois blocos, ordena e resolve nomes tolerando falhas', async () => {
+test('loadQueue busca os dois blocos, ordena e resolve nome e e-mail tolerando falhas', async () => {
   const client = fakeClient();
-  const queue = await loadQueue(client, { groupId: 5, meId: 9 }, { 52: 'Já conhecido' });
+  const known = { 52: { name: 'Já conhecido', email: 'j@x.com' } };
+  const queue = await loadQueue(client, { groupId: 5, meId: 9 }, known);
   assert.deepEqual(queue.unassigned.map((t) => t.id), [3, 1]);
   assert.deepEqual(queue.mine.map((t) => t.id), [2]);
-  assert.deepEqual(queue.names, { 50: 'Cliente 50', 52: 'Já conhecido' });
+  assert.deepEqual(queue.contacts, { 50: { name: 'Cliente 50', email: 'c50@x.com' }, 52: { name: 'Já conhecido', email: 'j@x.com' } });
   assert.deepEqual(client.calls.filter((c) => c[0] === 'search').map((c) => c[1]).sort(), [
     'group_id:5 AND agent_id:9 AND status:2',
     'group_id:5 AND agent_id:null AND status:2',
@@ -142,4 +143,18 @@ test('saveTicket não atualiza se o envio falhar', async () => {
 test('saveTicket propaga o erro quando só atualiza', async () => {
   const client = fakeClient({ updateTicket: async () => { throw new Error('Erro 400'); } });
   await assert.rejects(saveTicket(client, { ticketId: 7, mode: 'reply', text: '', changes: { status: 3 } }), /Erro 400/);
+});
+
+test('loadQueue busca de novo contatos guardados no formato antigo (só nome)', async () => {
+  const client = fakeClient();
+  const queue = await loadQueue(client, { groupId: 5, meId: 9 }, { 50: 'Nome antigo', 52: { name: 'Novo', email: '' } });
+  assert.deepEqual(queue.contacts[50], { name: 'Cliente 50', email: 'c50@x.com' });
+  assert.deepEqual(queue.contacts[52], { name: 'Novo', email: '' });
+  assert.deepEqual(client.calls.filter((c) => c[0] === 'contact').map((c) => c[1]).sort(), [50, 51]);
+});
+
+test('countUnassigned conta só os tickets sem responsável com uma busca', async () => {
+  const client = fakeClient();
+  assert.equal(await countUnassigned(client, { groupId: 5 }), 2);
+  assert.deepEqual(client.calls, [['search', 'group_id:5 AND agent_id:null AND status:2']]);
 });

@@ -29,24 +29,30 @@ export async function loadReference(client, groupId) {
   return { agents: groupAgents, ...parseTicketFields(fields), canned };
 }
 
-export async function loadQueue(client, { groupId, meId }, knownNames = {}) {
+export async function loadQueue(client, { groupId, meId }, knownContacts = {}) {
   const queries = buildQueueQueries(groupId, meId);
   const [unassigned, mine] = await Promise.all([
     client.searchTickets(queries.unassigned),
     client.searchTickets(queries.mine),
   ]);
-  const names = { ...knownNames };
+  // entradas antigas guardavam só o nome (string): são buscadas de novo para trazer o e-mail
+  const contacts = Object.fromEntries(Object.entries(knownContacts).filter(([, c]) => c && typeof c === 'object'));
   const missing = [...new Set([...unassigned, ...mine].map((t) => t.requester_id))]
-    .filter((id) => id != null && !(id in names));
+    .filter((id) => id != null && !(id in contacts));
   await Promise.all(missing.map(async (id) => {
     try {
       const contact = await client.contact(id);
-      names[id] = contact.name || contact.email;
+      contacts[id] = { name: contact.name || contact.email || '', email: contact.email || '' };
     } catch {
-      // sem nome: a tela mostra "Cliente #id" e tenta de novo na próxima carga
+      // sem contato: a tela mostra "Cliente #id" e tenta de novo na próxima carga
     }
   }));
-  return { unassigned: sortQueue(unassigned), mine: sortQueue(mine), names };
+  return { unassigned: sortQueue(unassigned), mine: sortQueue(mine), contacts };
+}
+
+export async function countUnassigned(client, { groupId }) {
+  const tickets = await client.searchTickets(buildQueueQueries(groupId, null).unassigned);
+  return sortQueue(tickets).length;
 }
 
 export async function loadTicket(client, ticketId, agents = []) {

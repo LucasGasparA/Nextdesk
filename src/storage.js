@@ -1,5 +1,5 @@
 const CONFIG_KEY = 'config';
-const NAMES_KEY = 'names';
+const CONTACTS_KEY = 'contacts';
 const CACHE_PREFIX = 'cache:';
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
@@ -29,9 +29,9 @@ export function createStorage(area) {
       if (keys.length) await area.remove(keys);
     },
 
-    async loadNames() {
-      return (await read(NAMES_KEY)) ?? {};
+    async loadContacts() {
+      return (await read(CONTACTS_KEY)) ?? {};
     },
-    saveNames: (names) => area.set({ [NAMES_KEY]: names }),
+    saveContacts: (contacts) => area.set({ [CONTACTS_KEY]: contacts }),
   };
 }

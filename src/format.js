@@ -44,3 +44,17 @@ export function linksToText(html) {
     return !label || label === href ? href : `${label} (${href})`;
   });
 }
+
+const HOUR_MS = 60 * 60 * 1000;
+
+export function ageLevel(iso, now = Date.now()) {
+  const age = now - Date.parse(iso);
+  if (age < 4 * HOUR_MS) return 'fresh';
+  if (age < 24 * HOUR_MS) return 'warn';
+  return 'late';
+}
+
+export function badgeText(count) {
+  if (count <= 0) return '';
+  return count > 99 ? '99+' : String(count);
+}

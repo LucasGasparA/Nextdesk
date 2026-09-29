@@ -17,7 +17,11 @@
       "32": "icons/icon-32.png"
     }
   },
-  "permissions": ["storage"],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "permissions": ["storage", "alarms"],
   "host_permissions": [
     "https://ajuda.nextfit.com.br/*",
     "https://*.freshdesk.com/*"

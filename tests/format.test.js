@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { escapeHtml, textToHtml, timeAgo, normalizeDomain, fillPlaceholders, linksToText, DEFAULT_DOMAIN } from '../src/format.js';
+import { escapeHtml, textToHtml, timeAgo, normalizeDomain, fillPlaceholders, linksToText, DEFAULT_DOMAIN, ageLevel, badgeText } from '../src/format.js';
 
 test('escapeHtml escapa caracteres especiais', () => {
   assert.equal(escapeHtml(`<b>"Tom" & 'Ana'</b>`), '&lt;b&gt;&quot;Tom&quot; &amp; &#39;Ana&#39;&lt;/b&gt;');
@@ -53,4 +53,19 @@ test('linksToText não repete o endereço quando o texto já é o link', () => {
 
 test('DEFAULT_DOMAIN é o endereço da API da conta, não o portal', () => {
   assert.equal(DEFAULT_DOMAIN, 'sistemanextfit.freshdesk.com');
+});
+
+test('ageLevel: até 4 h recente, até 24 h atenção, depois atrasado', () => {
+  const now = Date.parse('2026-09-29T12:00:00Z');
+  assert.equal(ageLevel('2026-09-29T08:01:00Z', now), 'fresh');
+  assert.equal(ageLevel('2026-09-29T08:00:00Z', now), 'warn');
+  assert.equal(ageLevel('2026-09-28T12:00:01Z', now), 'warn');
+  assert.equal(ageLevel('2026-09-28T12:00:00Z', now), 'late');
+});
+
+test('badgeText some no zero e limita em 99+', () => {
+  assert.equal(badgeText(0), '');
+  assert.equal(badgeText(7), '7');
+  assert.equal(badgeText(99), '99');
+  assert.equal(badgeText(100), '99+');
 });

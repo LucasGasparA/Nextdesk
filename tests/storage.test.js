@@ -36,19 +36,19 @@ test('cached chama o loader uma vez dentro do TTL de 24 h', async () => {
   assert.equal(await storage.cached('ref', loader, { now: 1000 + DAY_MS }), 2);
 });
 
-test('clearCache remove o cache e preserva config e nomes', async () => {
+test('clearCache remove o cache e preserva config e contatos', async () => {
   const area = fakeArea();
   const storage = createStorage(area);
   await storage.saveConfig({ domain: 'd' });
-  await storage.saveNames({ 50: 'Maria' });
+  await storage.saveContacts({ 50: { name: 'Maria', email: 'm@x.com' } });
   await storage.cached('ref', async () => 'x');
   await storage.clearCache();
-  assert.deepEqual(Object.keys(area.data).sort(), ['config', 'names']);
+  assert.deepEqual(Object.keys(area.data).sort(), ['config', 'contacts']);
 });
 
-test('nomes começam vazios e são salvos', async () => {
+test('contatos começam vazios e são salvos', async () => {
   const storage = createStorage(fakeArea());
-  assert.deepEqual(await storage.loadNames(), {});
-  await storage.saveNames({ 50: 'Maria' });
-  assert.deepEqual(await storage.loadNames(), { 50: 'Maria' });
+  assert.deepEqual(await storage.loadContacts(), {});
+  await storage.saveContacts({ 50: { name: 'Maria', email: 'm@x.com' } });
+  assert.deepEqual(await storage.loadContacts(), { 50: { name: 'Maria', email: 'm@x.com' } });
 });

@@ -2,11 +2,13 @@ import { createClient, ApiError } from './api.js';
 import { createStorage } from './storage.js';
 import { discoverSetup, loadReference, loadQueue, loadTicket, saveTicket } from './actions.js';
 import { computeChanges, validateSave, buildOptions } from './fields.js';
-import { timeAgo, normalizeDomain, fillPlaceholders, linksToText, DEFAULT_DOMAIN } from './format.js';
+import { timeAgo, normalizeDomain, fillPlaceholders, linksToText, DEFAULT_DOMAIN, ageLevel } from './format.js';
+import { showBadge } from './badge.js';
 import { createNavigator } from './nav.js';
 
 const REPLY_PLACEHOLDER = 'Escreva a resposta para o cliente…';
 const NOTE_PLACEHOLDER = 'Nota visível só para o time…';
+const TAB_KEY = 'nextdesk.tab';
 
 const storage = createStorage(chrome.storage.local);
 const view = document.getElementById('view');
@@ -118,26 +120,102 @@ async function showQueue(notice = '') {
   showMessage(notice, 'info');
   showLoading();
   const ok = await run(async () => {
-    const queue = await loadQueue(state.client, state.config, await storage.loadNames());
-    await storage.saveNames(queue.names);
+    const queue = await loadQueue(state.client, state.config, await storage.loadContacts());
+    await storage.saveContacts(queue.contacts);
+    showBadge(queue.unassigned.length);
     if (!isCurrent()) return;
-    view.replaceChildren(
-      queueSection('Sem responsável', queue.unassigned, queue.names),
-      queueSection('Meus tickets', queue.mine, queue.names),
-    );
+    view.replaceChildren(queueTabs(queue));
   });
   if (!ok && isCurrent()) view.querySelector('.loading')?.remove();
 }
 
-function queueSection(title, tickets, names) {
-  return h('section', {},
-    h('h2', {}, `${title} (${tickets.length})`),
-    tickets.length
-      ? h('ul', {}, tickets.map((t) => h('li', {},
-          h('button', { type: 'button', class: 'ticket-row', onclick: () => showTicket(t.id) },
-            h('span', { class: 'subject' }, t.subject || '(sem assunto)'),
-            h('span', { class: 'meta' }, `${names[t.requester_id] || `Cliente #${t.requester_id}`} · #${t.id} · ${timeAgo(t.created_at)}`)))))
-      : h('p', { class: 'empty' }, 'Nenhum ticket.'));
+function loadTab() {
+  try {
+    return localStorage.getItem(TAB_KEY) === 'mine' ? 'mine' : 'unassigned';
+  } catch {
+    return 'unassigned';
+  }
+}
+
+function saveTab(tab) {
+  try {
+    localStorage.setItem(TAB_KEY, tab);
+  } catch {
+    // sem localStorage: a aba volta para "Sem responsável" na próxima abertura
+  }
+}
+
+function queueTabs(queue) {
+  const tabs = [
+    { id: 'unassigned', label: 'Sem responsável', tickets: queue.unassigned, empty: 'Nenhum ticket sem responsável.' },
+    { id: 'mine', label: 'Meus', tickets: queue.mine, empty: 'Nenhum ticket com você.' },
+  ];
+  const panel = h('div', { class: 'tab-panel', role: 'tabpanel' });
+  const buttons = tabs.map((tab) => h('button', { type: 'button', class: 'tab', role: 'tab', onclick: () => select(tab.id) },
+    tab.label,
+    h('span', { class: 'count' }, String(tab.tickets.length))));
+
+  function select(id) {
+    saveTab(id);
+    tabs.forEach((tab, i) => {
+      buttons[i].classList.toggle('active', tab.id === id);
+      buttons[i].setAttribute('aria-selected', String(tab.id === id));
+    });
+    const tab = tabs.find((t) => t.id === id);
+    panel.replaceChildren(tab.tickets.length
+      ? h('ul', { class: 'tickets' }, tab.tickets.map((t) => ticketRow(t, queue.contacts[t.requester_id])))
+      : h('p', { class: 'empty' }, tab.empty));
+    view.scrollTop = 0;
+  }
+
+  select(loadTab());
+  return h('div', {}, h('div', { class: 'tabs', role: 'tablist' }, buttons), panel);
+}
+
+function ticketRow(ticket, contact) {
+  const open = () => showTicket(ticket.id);
+  const name = contact?.name || `Cliente #${ticket.requester_id}`;
+  const email = contact?.email;
+  return h('li', {
+    class: 'ticket-row',
+    tabIndex: 0,
+    onclick: open,
+    onkeydown: (event) => {
+      if (event.key === 'Enter' && event.target === event.currentTarget) open();
+    },
+  },
+    h('div', { class: 'row-line' },
+      h('span', { class: 'client', title: name }, name),
+      h('span', { class: `age ${ageLevel(ticket.created_at)}` }, timeAgo(ticket.created_at))),
+    email ? h('div', { class: 'row-line' },
+      h('span', { class: 'email', title: email }, email),
+      copyButton(email)) : null,
+    h('div', { class: 'row-line' },
+      h('span', { class: 'ticket-subject', title: ticket.subject || '' }, ticket.subject || '(sem assunto)'),
+      h('span', { class: 'ticket-id' }, `#${ticket.id}`)));
+}
+
+function copyButton(text) {
+  const button = h('button', {
+    type: 'button',
+    class: 'copy',
+    title: 'Copiar e-mail',
+    onclick: async (event) => {
+      event.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = 'Copiado!';
+        button.classList.add('done');
+      } catch {
+        button.textContent = 'Não copiou';
+      }
+      setTimeout(() => {
+        button.textContent = 'Copiar';
+        button.classList.remove('done');
+      }, 1500);
+    },
+  }, 'Copiar');
+  return button;
 }
 
 async function showTicket(ticketId) {
