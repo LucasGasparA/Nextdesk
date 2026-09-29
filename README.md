@@ -12,8 +12,8 @@ Extensão do Chrome/Edge para tratar os tickets abertos do grupo **CSM - Engajam
 ## Configurar
 
 1. No Freshdesk, clique na sua foto → **Configurações do perfil** → **Visualizar chave de API**.
-2. Abra o popup do NextDesk, confira o domínio (`ajuda.nextfit.com.br`) e cole a chave.
-3. Se aparecer que o domínio não respondeu como API, use o endereço `sua-conta.freshdesk.com`.
+2. Abra o popup do NextDesk, confira o domínio (`sistemanextfit.freshdesk.com`) e cole a chave.
+3. Não use `ajuda.nextfit.com.br`: é só o portal de ajuda e não responde à API.
 
 A chave fica só no armazenamento local do navegador.
 

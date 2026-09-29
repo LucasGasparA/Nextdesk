@@ -37,14 +37,23 @@ export function createClient({ domain, apiKey, fetchFn = fetch }) {
       const retryAfter = Number(response.headers.get('Retry-After')) || 60;
       throw new ApiError(`Limite de requisições do Freshdesk atingido. Tente de novo em ${retryAfter}s.`, 429, retryAfter);
     }
+    const notApi = () => new ApiError(
+      `O domínio ${domain} não respondeu como a API do Freshdesk. Tente o endereço sua-conta.freshdesk.com.`,
+      response.status,
+    );
     const contentType = response.headers.get('Content-Type') || '';
-    if (!contentType.includes('application/json')) {
-      throw new ApiError(
-        `O domínio ${domain} não respondeu como a API do Freshdesk. Tente o endereço sua-conta.freshdesk.com.`,
-        response.status,
-      );
+    if (!contentType.includes('application/json')) throw notApi();
+    const raw = await response.text();
+    if (!raw) {
+      if (response.status === 404) throw notApi();
+      if (response.ok) return null;
     }
-    const data = await response.json();
+    let data = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+    } catch {
+      throw notApi();
+    }
     if (!response.ok) {
       const detail = data?.errors?.map((e) => `${e.field}: ${e.message}`).join('; ') || data?.description || '';
       throw new ApiError(`Erro ${response.status} do Freshdesk. ${detail}`.trim(), response.status);

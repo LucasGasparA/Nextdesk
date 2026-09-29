@@ -1,3 +1,5 @@
+export const DEFAULT_DOMAIN = 'sistemanextfit.freshdesk.com';
+
 export function escapeHtml(text) {
   return String(text)
     .replace(/&/g, '&amp;')

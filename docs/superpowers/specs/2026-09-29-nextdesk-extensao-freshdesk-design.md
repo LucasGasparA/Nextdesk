@@ -55,7 +55,7 @@ Cada módulo de `src/` exceto `popup.js` é puro ou recebe `fetch`/storage por p
 ## Telas
 
 1. **Configuração** (primeira execução ou após erro 401)
-   - Campos: domínio (padrão `ajuda.nextfit.com.br`) e chave de API
+   - Campos: domínio (padrão `sistemanextfit.freshdesk.com` — o portal `ajuda.nextfit.com.br` não serve a API: responde 404 vazio) e chave de API
    - Ao salvar: valida com `GET /api/v2/agents/me`, obtém o ID do usuário e localiza o grupo "CSM - Engajamento" em `GET /api/v2/groups`
    - Se o domínio próprio não responder à API, exibe mensagem sugerindo o domínio `*.freshdesk.com` da conta
 2. **Lista**

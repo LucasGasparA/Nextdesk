@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { escapeHtml, textToHtml, timeAgo, normalizeDomain, fillPlaceholders, linksToText } from '../src/format.js';
+import { escapeHtml, textToHtml, timeAgo, normalizeDomain, fillPlaceholders, linksToText, DEFAULT_DOMAIN } from '../src/format.js';
 
 test('escapeHtml escapa caracteres especiais', () => {
   assert.equal(escapeHtml(`<b>"Tom" & 'Ana'</b>`), '&lt;b&gt;&quot;Tom&quot; &amp; &#39;Ana&#39;&lt;/b&gt;');
@@ -49,4 +49,8 @@ test('linksToText mantém o endereço dos links como texto', () => {
 
 test('linksToText não repete o endereço quando o texto já é o link', () => {
   assert.equal(linksToText("<a href='https://x.com'>https://x.com</a>"), 'https://x.com');
+});
+
+test('DEFAULT_DOMAIN é o endereço da API da conta, não o portal', () => {
+  assert.equal(DEFAULT_DOMAIN, 'sistemanextfit.freshdesk.com');
 });

@@ -2,10 +2,9 @@ import { createClient, ApiError } from './api.js';
 import { createStorage } from './storage.js';
 import { discoverSetup, loadReference, loadQueue, loadTicket, saveTicket } from './actions.js';
 import { computeChanges, validateSave, buildOptions } from './fields.js';
-import { timeAgo, normalizeDomain, fillPlaceholders, linksToText } from './format.js';
+import { timeAgo, normalizeDomain, fillPlaceholders, linksToText, DEFAULT_DOMAIN } from './format.js';
 import { createNavigator } from './nav.js';
 
-const DEFAULT_DOMAIN = 'ajuda.nextfit.com.br';
 const REPLY_PLACEHOLDER = 'Escreva a resposta para o cliente…';
 const NOTE_PLACEHOLDER = 'Nota visível só para o time…';
 

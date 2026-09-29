@@ -132,3 +132,13 @@ test('redirecionamento para outro domínio explica o domínio em vez de culpar a
   const c = client(fakeFetch(() => redirected));
   await assert.rejects(c.me(), (e) => e instanceof ApiError && e.status !== 401 && /nextfit\.freshdesk\.com/.test(e.message));
 });
+
+test('404 com corpo vazio explica que o domínio não serve a API', async () => {
+  const c = client(fakeFetch(() => new Response('', { status: 404, headers: { 'Content-Type': 'application/json' } })));
+  await assert.rejects(c.me(), (e) => e instanceof ApiError && e.status === 404 && /não respondeu como a API/.test(e.message));
+});
+
+test('resposta de sucesso sem corpo não quebra', async () => {
+  const c = client(fakeFetch(() => new Response(null, { status: 204, headers: { 'Content-Type': 'application/json' } })));
+  assert.equal(await c.updateTicket(1, { status: 3 }), null);
+});
