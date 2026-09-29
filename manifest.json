@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "NextDesk",
+  "version": "0.1.0",
+  "description": "Responda e delegue tickets do Freshdesk sem abrir a ferramenta.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "NextDesk"
+  },
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://ajuda.nextfit.com.br/*",
+    "https://*.freshdesk.com/*"
+  ]
+}

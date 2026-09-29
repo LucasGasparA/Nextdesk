@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>NextDesk</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="bar">
+    <button id="back" class="icon" type="button" title="Voltar" hidden>←</button>
+    <h1 id="title">NextDesk</h1>
+    <button id="refresh" class="icon" type="button" title="Atualizar" hidden>⟳</button>
+    <button id="settings" class="icon" type="button" title="Configurações" hidden>⚙</button>
+  </header>
+  <div id="message" class="message" role="status" hidden></div>
+  <main id="view"></main>
+  <script type="module" src="src/popup.js"></script>
+</body>
+</html>
