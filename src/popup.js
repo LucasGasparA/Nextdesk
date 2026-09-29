@@ -2,7 +2,8 @@ import { createClient, ApiError } from './api.js';
 import { createStorage } from './storage.js';
 import { discoverSetup, loadReference, loadQueue, loadTicket, saveTicket } from './actions.js';
 import { computeChanges, validateSave, buildOptions } from './fields.js';
-import { timeAgo, normalizeDomain, fillPlaceholders } from './format.js';
+import { timeAgo, normalizeDomain, fillPlaceholders, linksToText } from './format.js';
+import { createNavigator } from './nav.js';
 
 const DEFAULT_DOMAIN = 'ajuda.nextfit.com.br';
 const REPLY_PLACEHOLDER = 'Escreva a resposta para o cliente…';
@@ -11,6 +12,7 @@ const NOTE_PLACEHOLDER = 'Nota visível só para o time…';
 const storage = createStorage(chrome.storage.local);
 const view = document.getElementById('view');
 const state = { config: null, client: null, ref: null };
+const nav = createNavigator();
 
 function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);
@@ -70,6 +72,7 @@ async function getRef() {
 }
 
 function showSetup(error = '') {
+  nav.begin();
   setHeader('Configuração', { back: state.config ? () => showQueue() : null });
   showMessage(error);
   const domain = h('input', { value: state.config?.domain ?? DEFAULT_DOMAIN, required: true });
@@ -111,18 +114,20 @@ function showSetup(error = '') {
 }
 
 async function showQueue(notice = '') {
+  const isCurrent = nav.begin();
   setHeader('Tickets abertos', { refresh: () => showQueue(), settings: true });
   showMessage(notice, 'info');
   showLoading();
   const ok = await run(async () => {
     const queue = await loadQueue(state.client, state.config, await storage.loadNames());
     await storage.saveNames(queue.names);
+    if (!isCurrent()) return;
     view.replaceChildren(
       queueSection('Sem responsável', queue.unassigned, queue.names),
       queueSection('Meus tickets', queue.mine, queue.names),
     );
   });
-  if (!ok) view.querySelector('.loading')?.remove();
+  if (!ok && isCurrent()) view.querySelector('.loading')?.remove();
 }
 
 function queueSection(title, tickets, names) {
@@ -137,17 +142,19 @@ function queueSection(title, tickets, names) {
 }
 
 async function showTicket(ticketId) {
+  const isCurrent = nav.begin();
   setHeader(`Ticket #${ticketId}`, { back: () => showQueue() });
   showMessage('');
   showLoading();
   const ok = await run(async () => {
     const ref = await getRef();
     const { ticket, messages } = await loadTicket(state.client, ticketId, ref.agents);
+    if (!isCurrent()) return;
     view.replaceChildren(ticketView(ticket, messages, ref));
     const thread = view.querySelector('.thread');
     thread.scrollTop = thread.scrollHeight;
   });
-  if (!ok) view.querySelector('.loading')?.remove();
+  if (!ok && isCurrent()) view.querySelector('.loading')?.remove();
 }
 
 function selectOf(options, current, unknownLabel) {
@@ -164,7 +171,7 @@ function messageItem(m) {
 }
 
 function htmlToText(html) {
-  const withBreaks = html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|li)>/gi, '\n');
+  const withBreaks = linksToText(html).replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|li)>/gi, '\n');
   const doc = new DOMParser().parseFromString(withBreaks, 'text/html');
   return doc.body.textContent.replace(/\n{3,}/g, '\n\n').trim();
 }

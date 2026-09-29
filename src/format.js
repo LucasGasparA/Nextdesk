@@ -35,3 +35,10 @@ export function fillPlaceholders(text, ticket) {
   };
   return text.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (match, key) => values[key] ?? match);
 }
+
+export function linksToText(html) {
+  return html.replace(/<a\b[^>]*?\bhref\s*=\s*(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi, (match, quote, href, inner) => {
+    const label = inner.replace(/<[^>]*>/g, '').trim();
+    return !label || label === href ? href : `${label} (${href})`;
+  });
+}

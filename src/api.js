@@ -26,6 +26,12 @@ export function createClient({ domain, apiKey, fetchFn = fetch }) {
     } catch {
       throw new ApiError('Sem conexão com o Freshdesk.', 0);
     }
+    if (response.redirected) {
+      const host = new URL(response.url).host;
+      if (host !== domain) {
+        throw new ApiError(`O domínio ${domain} redireciona para ${host}. Use ${host} na configuração.`, 0);
+      }
+    }
     if (response.status === 401) throw new ApiError('Chave de API inválida.', 401);
     if (response.status === 429) {
       const retryAfter = Number(response.headers.get('Retry-After')) || 60;

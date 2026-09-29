@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { escapeHtml, textToHtml, timeAgo, normalizeDomain, fillPlaceholders } from '../src/format.js';
+import { escapeHtml, textToHtml, timeAgo, normalizeDomain, fillPlaceholders, linksToText } from '../src/format.js';
 
 test('escapeHtml escapa caracteres especiais', () => {
   assert.equal(escapeHtml(`<b>"Tom" & 'Ana'</b>`), '&lt;b&gt;&quot;Tom&quot; &amp; &#39;Ana&#39;&lt;/b&gt;');
@@ -38,4 +38,15 @@ test('fillPlaceholders preenche campos conhecidos e mantém desconhecidos', () =
 
 test('fillPlaceholders sem nome do cliente usa "cliente"', () => {
   assert.equal(fillPlaceholders('Olá {{ticket.requester.firstname}}', { id: 1 }), 'Olá cliente');
+});
+
+test('linksToText mantém o endereço dos links como texto', () => {
+  assert.equal(
+    linksToText('<p>Veja <a target="_blank" href="https://x.com/a?b=1&amp;c=2">clique <b>aqui</b></a>.</p>'),
+    '<p>Veja clique aqui (https://x.com/a?b=1&amp;c=2).</p>',
+  );
+});
+
+test('linksToText não repete o endereço quando o texto já é o link', () => {
+  assert.equal(linksToText("<a href='https://x.com'>https://x.com</a>"), 'https://x.com');
 });

@@ -119,3 +119,16 @@ test('reply, note e updateTicket enviam método e corpo corretos', async () => {
     ],
   );
 });
+
+test('redirecionamento para outro domínio explica o domínio em vez de culpar a chave', async () => {
+  const redirected = {
+    status: 401,
+    ok: false,
+    redirected: true,
+    url: 'https://nextfit.freshdesk.com/api/v2/agents/me',
+    headers: new Headers({ 'Content-Type': 'application/json' }),
+    json: async () => ({}),
+  };
+  const c = client(fakeFetch(() => redirected));
+  await assert.rejects(c.me(), (e) => e instanceof ApiError && e.status !== 401 && /nextfit\.freshdesk\.com/.test(e.message));
+});
