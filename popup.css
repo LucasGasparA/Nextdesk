@@ -1,10 +1,13 @@
 :root {
+  --brand: #501e5b;
+  --brand-hover: #3e1647;
+  --on-brand: #ffffff;
   --bg: #ffffff;
-  --fg: #1f2328;
-  --muted: #656d76;
-  --line: #d0d7de;
-  --accent: #0b6bcb;
-  --soft: #f6f8fa;
+  --fg: #1f1a21;
+  --muted: #6b6270;
+  --line: #ddd3e0;
+  --accent: #501e5b;
+  --soft: #f5eff7;
   --note: #fff8c5;
   --error: #cf222e;
   --ok: #1a7f37;
@@ -13,12 +16,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #161b22;
-    --fg: #e6edf3;
-    --muted: #8d96a0;
-    --line: #30363d;
-    --accent: #4493f8;
-    --soft: #1f242c;
+    --brand-hover: #6a2a78;
+    --bg: #18131a;
+    --fg: #ece6ee;
+    --muted: #9c92a1;
+    --line: #3a2f3e;
+    --accent: #c9a3d4;
+    --soft: #241b28;
     --note: #3b2e00;
     --error: #ff7b72;
     --ok: #3fb950;
@@ -41,10 +45,13 @@ body {
 .bar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   padding: 8px 10px;
-  border-bottom: 1px solid var(--line);
+  background: var(--brand);
+  color: var(--on-brand);
 }
+
+.logo { display: block; border-radius: 5px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35); }
 
 .bar h1 { flex: 1; margin: 0; font-size: 14px; }
 
@@ -58,7 +65,7 @@ body {
   cursor: pointer;
 }
 
-.icon:hover { background: var(--soft); }
+.icon:hover { background: rgba(255, 255, 255, 0.15); }
 
 .message {
   margin: 8px 10px 0;
@@ -144,5 +151,8 @@ textarea.note { background: var(--note); }
 
 .invalid { border-color: var(--error); outline: 1px solid var(--error); }
 
-.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.primary { background: var(--brand); border-color: var(--brand); color: var(--on-brand); font-weight: 600; }
+.primary:hover:not(:disabled) { background: var(--brand-hover); border-color: var(--brand-hover); }
 .primary:disabled { opacity: 0.6; cursor: default; }
